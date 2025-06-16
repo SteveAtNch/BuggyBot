@@ -1,0 +1,2 @@
+ssid = 'AddTheSSID'
+password = 'ThisIsApassword'

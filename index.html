@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BuggyBot Radar</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+    }
+    canvas {
+      background-color: black;
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h2>BuggyBot Radar Scan</h2>
+  <canvas id="radarCanvas" width="500" height="500"></canvas>
+
+  <script>
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height;
+    const maxRadius = canvas.height;
+
+    function drawRadar(distances) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Auto-scale: find max distance in data (within valid range)
+      let maxDistance = Math.max(...distances.filter(d => d > 0), 50);
+      const scale = maxRadius / maxDistance;
+
+      // Draw grid arcs
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 1;
+      for (let r = 50; r <= maxDistance; r += 50) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r * scale, Math.PI, 2 * Math.PI);
+        ctx.stroke();
+      }
+
+      // Draw sweep lines
+      ctx.strokeStyle = '#666';
+      for (let angle = -80; angle <= 80; angle += 10) {
+        const rad = angle * Math.PI / 180;
+        const x = centerX + maxDistance * scale * Math.sin(rad);
+        const y = centerY - maxDistance * scale * Math.cos(rad);
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+
+      // Draw distance sweep line
+      ctx.strokeStyle = 'lime';
+      ctx.fillStyle = 'lime';
+      ctx.lineWidth = 2;
+
+      for (let i = 0; i < distances.length; i++) {
+        const angle = -80 + i;
+        const dist = distances[i];
+        if (dist > 0) {
+          const rad = angle * Math.PI / 180;
+          const x = centerX + dist * scale * Math.sin(rad);
+          const y = centerY - dist * scale * Math.cos(rad);
+
+          // Draw sweep line
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+
+          // Draw point
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    }
+
+    async function fetchDataAndDraw() {
+      try {
+        const res = await fetch('/data');
+        const data = await res.json();
+        // Slice from -80 to +80 = 161 values
+        const centerIndex = Math.floor(data.length / 2);
+        const sliced = data.slice(centerIndex - 80, centerIndex + 81);
+        drawRadar(sliced);
+      } catch (e) {
+        console.error("Failed to fetch radar data:", e);
+      }
+    }
+
+    setInterval(fetchDataAndDraw, 500);
+  </script>
+</body>
+</html>
