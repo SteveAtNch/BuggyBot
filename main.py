@@ -57,6 +57,6 @@ while True:
         oled.display.write_text(msg, x=x, y=y, size=font_size)
         oled.update()
     else:
-        print("Out of range or timeout")
+        print("Out of range or timeout. Nothing to see here.")
 
     sleep(0.05)
